@@ -196,7 +196,7 @@ try {
                 }
                 if (!String.IsNullOrEmpty(output_file))
                 {
-                    File.WriteAllText(output_file, script, Encoding.UTF8);
+                    File.WriteAllText(output_file, script, new UTF8Encoding(false));
                 }
                 else
                 {
