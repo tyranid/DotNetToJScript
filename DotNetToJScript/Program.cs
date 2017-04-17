@@ -17,6 +17,7 @@
 
 using NDesk.Options;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -70,11 +71,11 @@ try {
 </package>
 ";
 
-        static object BuildLoaderDelegate(string dll_path)
+        static object BuildLoaderDelegate(byte[] assembly)
         {
             // Create a bound delegate which will load our assembly from a byte array.
             Delegate res = Delegate.CreateDelegate(typeof(XmlValueGetter),
-                File.ReadAllBytes(dll_path),
+                assembly,
                 typeof(Assembly).GetMethod("Load", new Type[] { typeof(byte[]) }));
 
             // Create a COM invokable delegate to call the loader. Abuses contra-variance
@@ -83,10 +84,10 @@ try {
             return new HeaderHandler(res.DynamicInvoke);
         }
 
-        static object BuildLoaderDelegateMscorlib(string dll_path)
+        static object BuildLoaderDelegateMscorlib(byte[] assembly)
         {
             Delegate res = Delegate.CreateDelegate(typeof(Converter<byte[], Assembly>),
-                File.ReadAllBytes(dll_path),
+                assembly,
                 typeof(Assembly).GetMethod("Load", new Type[] { typeof(byte[]), typeof(byte[]) }));
 
             HeaderHandler d = new HeaderHandler(Convert.ToString);
@@ -131,6 +132,36 @@ try {
                 return Encoding.UTF8.GetString(stm.ToArray());
             }
         }
+
+        static HashSet<string> GetValidClasses(byte[] assembly)
+        {
+            Assembly asm = Assembly.Load(assembly);
+            return new HashSet<string>(asm.GetTypes().Where(t => t.IsPublic && t.GetConstructor(new Type[0]) != null).Select(t => t.FullName));
+        }
+
+        static void WriteColor(string str, ConsoleColor color)
+        {
+            ConsoleColor old_color = Console.ForegroundColor;
+            Console.ForegroundColor = color;
+            try
+            {
+                Console.Error.WriteLine(str);
+            }
+            finally
+            {
+                Console.ForegroundColor = old_color;
+            }
+        }
+
+        static void WriteError(string str)
+        {
+            WriteColor(str, ConsoleColor.Red);
+        }
+
+        static void WriteError(string format, params object[] args)
+        {
+            WriteError(String.Format(format, args));
+        }
         
         static void Main(string[] args)
         {
@@ -138,7 +169,7 @@ try {
             {
                 if (Environment.Version.Major != 2)
                 {
-                    Console.Error.WriteLine("This tool only works on v2 of the CLR");
+                    WriteError("This tool only works on v2 of the CLR");
                     Environment.Exit(1);
                 }
 
@@ -165,14 +196,43 @@ try {
                 if (!File.Exists(assembly_path) || show_help)
                 {
                     Console.Error.WriteLine(@"Usage: DotNetToJScript [options] path\to\asm");
+                    Console.Error.WriteLine("Copyright (C) James Forshaw 2017. Licensed under GPLv3.");
                     Console.Error.WriteLine("Options");
                     opts.WriteOptionDescriptions(Console.Error);
                     Environment.Exit(1);
                 }
 
+                byte[] assembly = File.ReadAllBytes(assembly_path);
+                try
+                {
+                    HashSet<string> valid_classes = GetValidClasses(assembly);
+                    if (!valid_classes.Contains(entry_class_name))
+                    {
+                        WriteError("Error: Class '{0}' not found is assembly.", entry_class_name);
+                        if (valid_classes.Count == 0)
+                        {
+                            WriteError("Error: Assembly doesn't contain any public, default constructable classes");
+                        }
+                        else
+                        {
+                            WriteError("Use one of the follow options to specify a valid classes");
+                            foreach (string name in valid_classes)
+                            {
+                                WriteError("-c {0}", name);
+                            }
+                        }
+                        Environment.Exit(1);
+                    }
+                }
+                catch (Exception)
+                {
+                    WriteError("Error: loading assembly information.");
+                    WriteError("The generated script might not work correctly");
+                }
+
                 BinaryFormatter fmt = new BinaryFormatter();
                 MemoryStream stm = new MemoryStream();
-                fmt.Serialize(stm, mscorlib_only ? BuildLoaderDelegateMscorlib(assembly_path) : BuildLoaderDelegate(assembly_path));
+                fmt.Serialize(stm, mscorlib_only ? BuildLoaderDelegateMscorlib(assembly) : BuildLoaderDelegate(assembly));
 
                 byte[] ba = stm.ToArray();
                 StringBuilder builder = new StringBuilder();
@@ -205,7 +265,19 @@ try {
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine(ex.Message);
+                ReflectionTypeLoadException tex = ex as ReflectionTypeLoadException;
+                if (tex != null)
+                {
+                    WriteError("Couldn't load assembly file");
+                    foreach (var e in tex.LoaderExceptions)
+                    {
+                        WriteError(e.Message);
+                    }
+                }
+                else
+                {
+                    WriteError(ex.Message);
+                }
             }
         }
     }
