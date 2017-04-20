@@ -1,4 +1,4 @@
-﻿This file is part of DotNetToJScript - A tool to generate a 
+This file is part of DotNetToJScript - A tool to generate a 
 JScript which bootstraps an arbitrary v2.NET Assembly and class.
 Copyright (C) James Forshaw 2017
 
@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with DotNetToJScript.  If not, see <http://www.gnu.org/licenses/>.
 
-Usage Notes:
+# Usage Notes
 
 This only works from full trust JScript(obviously), so should work in
 scriptlets etc. It also only works if v2/v3/v3.5 is installed. If
@@ -28,7 +28,7 @@ To use this you'll need to create an assembly which targets .NET 2 (though
 in most cases you can also use 3.5 as you don't tend to see .NET 2 installed
 in isolation. In the assembly implement a class called TestClass which does
 something you want to do in the public, parameterless constructor.
-
+```
 public class TestClass
 {
     public TestClass()
@@ -37,25 +37,26 @@ public class TestClass
         Process.Start("notepad.exe");
     }
 }
+```
 
 Ensure it's public. Then pass to this tool the path to the .NET assembly.
 If you annotate the class with the ComVisible attribute you can even interact
 with the object after it's created. e.g.
-
+```
 [ComVisible(true)]
 public class TestClass
 {
     public void DoSomething(string arg) { }
 }
-
+```
 You can change the name of the entry class by using the -c switch and adding the name.
 You can also get the tool to add additional code to interact with the object by
 specifying the -s parameter with the path to a text file containing the additional
 JScript. The created object is named 'o', so for example if you wanted to call
 the DoSomething method load a file containing:
-
+```
 o.DoSomething("SomeArg");
-
+```
 The default mode is to output a JScript file which can be executed in Windows
 Scripting Host. However if you want a scriptlet pass either -m (for a scriptlet
 which can be used from a scriptlet moniker) or -u (for a scriptlet which can be
