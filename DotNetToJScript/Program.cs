@@ -246,6 +246,12 @@ End Function
                     Environment.Exit(1);
                 }
 
+                if (vba_code && (scriptlet_moniker || scriptlet_uninstall))
+                {
+                    Console.Error.WriteLine("Cannot use '-v' in combination with scriplet options.");
+                    Environment.Exit(1);
+                }
+
                 byte[] assembly = File.ReadAllBytes(assembly_path);
                 try
                 {
