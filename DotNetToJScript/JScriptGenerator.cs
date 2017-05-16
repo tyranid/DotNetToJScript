@@ -16,15 +16,13 @@
 //    along with DotNetToJScript.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using System.Linq;
 using System.Text;
 
 namespace DotNetToJScript
 {
     class JScriptGenerator : IScriptGenerator
     {
-        static string debug_enabled = @"function debug(s) { WScript.Echo(s); }" + Environment.NewLine;
-        static string debug_disabled = @"function debug(s) { }" + Environment.NewLine;
-
         static string GetScriptHeader(RuntimeVersion version, bool enable_debug)
         {
             StringBuilder builder = new StringBuilder();
@@ -42,10 +40,10 @@ namespace DotNetToJScript
                     break;
             }
             builder.AppendLine("}");
-            builder.AppendLine("function debug(s) {");
+            builder.Append("function debug(s) {");
             if (enable_debug)
             {
-                builder.AppendLine("WScript.Echo(s);");
+                builder.Append("WScript.Echo(s);");
             }
             builder.AppendLine("}");
             return builder.ToString();
@@ -69,22 +67,17 @@ namespace DotNetToJScript
 
         public string GenerateScript(byte[] serialized_object, string entry_class_name, string additional_script, RuntimeVersion version, bool enable_debug)
         {
-            StringBuilder builder = new StringBuilder();
-            for (int i = 0; i < serialized_object.Length; ++i)
+            if ((serialized_object.Length % 3) != 0)
             {
-                builder.Append(serialized_object[i]);
-                if (i < serialized_object.Length - 1)
-                {
-                    builder.Append(",");
-                }
-                if (i > 0 && (i % 32) == 0)
-                {
-                    builder.AppendLine();
-                }
+                int length = serialized_object.Length + (3 - serialized_object.Length % 3);
+                Array.Resize(ref serialized_object, length);
             }
-            
+
+            string base64 = Convert.ToBase64String(serialized_object, Base64FormattingOptions.InsertLineBreaks);
+            string[] lines = base64.Split(new string[] { Environment.NewLine }, StringSplitOptions.None).Select(s => String.Format("\"{0}\"", s)).ToArray();
+
             return GetScriptHeader(version, enable_debug) 
-                + Properties.Resources.jscript_template.Replace("%SERIALIZED%", builder.ToString()).Replace("%CLASS%", entry_class_name).Replace("%ADDEDSCRIPT%", additional_script);
+                + Properties.Resources.jscript_template.Replace("%SERIALIZED%", String.Join("+"+Environment.NewLine, lines)).Replace("%CLASS%", entry_class_name).Replace("%ADDEDSCRIPT%", additional_script);
         }
     }
 }
