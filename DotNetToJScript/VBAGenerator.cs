@@ -42,7 +42,12 @@ namespace DotNetToJScript
         {
             if (version != RuntimeVersion.None)
             {
-                throw new ArgumentException("VBA output does not support version detection");
+                throw new ArgumentException("VBA generator does not support version detection");
+            }
+
+            if (enable_debug)
+            {
+                throw new ArgumentException("VBA generator does not support debug output");
             }
 
             string hex_encoded = BitConverter.ToString(serialized_object).Replace("-", "");
