@@ -22,71 +22,34 @@ namespace DotNetToJScript
 {
     class JScriptGenerator : IScriptGenerator
     {
-        static string jscript_template =
-            @"var serialized_obj = [
-%SERIALIZED%
-];
-var entry_class = '%CLASS%';
-
-try {
-    setversion();
-    var stm = new ActiveXObject('System.IO.MemoryStream');
-    var fmt = new ActiveXObject('System.Runtime.Serialization.Formatters.Binary.BinaryFormatter');
-    var al = new ActiveXObject('System.Collections.ArrayList')
-
-    for (i in serialized_obj) {
-        stm.WriteByte(serialized_obj[i]);
-    }
-
-    stm.Position = 0;
-    var n = fmt.SurrogateSelector;
-    var d = fmt.Deserialize_2(stm);
-    al.Add(n);
-    var o = d.DynamicInvoke(al.ToArray()).CreateInstance(entry_class);
-    %ADDEDSCRIPT%
-} catch (e) {
-    debug(e.message);
-}";
-
-        static string version_detection = @"function setversion() {
-  var shell = new ActiveXObject('WScript.Shell');
-  ver = 'v4.0.30319';
-  try {
-    shell.RegRead('HKLM\\SOFTWARE\\Microsoft\\.NETFramework\\v4.0.30319\\');
-  } catch(e) { 
-    ver = 'v2.0.50727';
-  }
-  shell.Environment('Process')('COMPLUS_Version') = ver;
-}";
-        static string version_v2 = @"function setversion() {
-  new ActiveXObject('WScript.Shell').Environment('Process')('COMPLUS_Version') = 'v2.0.50727';
-}";
-        static string version_v4 = @"function setversion() {
-  new ActiveXObject('WScript.Shell').Environment('Process')('COMPLUS_Version') = 'v4.0.30319';
-}";
-        static string version_none = @"function setversion() {}";
-
         static string debug_enabled = @"function debug(s) { WScript.Echo(s); }" + Environment.NewLine;
         static string debug_disabled = @"function debug(s) { }" + Environment.NewLine;
 
-        static string GetSetVersionJScript(RuntimeVersion version)
+        static string GetScriptHeader(RuntimeVersion version, bool enable_debug)
         {
-            string script = version_none;
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine("function setversion() {");
             switch (version)
             {
                 case RuntimeVersion.Auto:
-                    script = version_detection;
+                    builder.AppendLine(Properties.Resources.jscript_auto_version_script);
                     break;
                 case RuntimeVersion.v2:
-                    script = version_v2;
+                    builder.AppendLine("new ActiveXObject('WScript.Shell').Environment('Process')('COMPLUS_Version') = 'v2.0.50727';");
                     break;
                 case RuntimeVersion.v4:
-                    script = version_v4;
+                    builder.AppendLine("new ActiveXObject('WScript.Shell').Environment('Process')('COMPLUS_Version') = 'v4.0.30319';");
                     break;
             }
-            return script + Environment.NewLine;
+            builder.AppendLine("}");
+            builder.AppendLine("function debug(s) {");
+            if (enable_debug)
+            {
+                builder.AppendLine("WScript.Echo(s);");
+            }
+            builder.AppendLine("}");
+            return builder.ToString();
         }
-
 
         public string ScriptName
         {
@@ -120,8 +83,8 @@ try {
                 }
             }
             
-            return (enable_debug ? debug_enabled : debug_disabled) + GetSetVersionJScript(version) 
-                + jscript_template.Replace("%SERIALIZED%", builder.ToString()).Replace("%CLASS%", entry_class_name).Replace("%ADDEDSCRIPT%", additional_script);
+            return GetScriptHeader(version, enable_debug) 
+                + Properties.Resources.jscript_template.Replace("%SERIALIZED%", builder.ToString()).Replace("%CLASS%", entry_class_name).Replace("%ADDEDSCRIPT%", additional_script);
         }
     }
 }

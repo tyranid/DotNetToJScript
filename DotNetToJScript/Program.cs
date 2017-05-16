@@ -31,19 +31,6 @@ namespace DotNetToJScript
 {
     class Program
     {
-        static string scriptlet_template =
-            @"<?xml version='1.0'?>
-<package>
-<component id='dummy'>
-<registration
-  description='dummy'
-  progid='dummy'
-  version='1.00'
-  remotable='True'>
-</registration>
-</component>
-</package>
-";
         enum ScriptLanguage
         {
             JScript,
@@ -91,7 +78,7 @@ namespace DotNetToJScript
         static string CreateScriptlet(string script, string script_name, bool register_script)
         {
             XmlDocument doc = new XmlDocument();
-            doc.LoadXml(scriptlet_template);
+            doc.LoadXml(Properties.Resources.scriptlet_template);
             XmlWriterSettings settings = new XmlWriterSettings();
             settings.Indent = true;
             settings.NewLineOnAttributes = true;
@@ -248,7 +235,7 @@ namespace DotNetToJScript
                 string script = generator.GenerateScript(stm.ToArray(), entry_class_name, additional_script, version, enable_debug);
                 if (scriptlet_moniker || scriptlet_uninstall)
                 {
-                    if (generator.SupportsScriptlet)
+                    if (!generator.SupportsScriptlet)
                     {
                         throw new ArgumentException(String.Format("{0} generator does not support Scriptlet output", generator.ScriptName));
                     }

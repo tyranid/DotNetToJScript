@@ -1,0 +1,11 @@
+<?xml version='1.0'?>
+<package>
+<component id='dummy'>
+<registration
+  description='dummy'
+  progid='dummy'
+  version='1.00'
+  remotable='True'>
+</registration>
+</component>
+</package>
