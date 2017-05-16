@@ -58,8 +58,8 @@ o.DoSomething("SomeArg");
 The default mode is to output a JScript file which can be executed in Windows
 Scripting Host. However if you want a scriptlet pass either -m (for a scriptlet
 which can be used from a scriptlet moniker) or -u (for a scriptlet which can be
-used from regsvr32). You can also specify the -v switch to output a VBA file which
-should work in Office Macros.
+used from regsvr32). You can also specify the '-l vba' switch to output a VBA 
+file which should work in Office Macros.
 
 Finally by default the tool will output to stdout, you can output direct to a file
 using the -o switch.
