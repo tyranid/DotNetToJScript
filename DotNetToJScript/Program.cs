@@ -38,6 +38,8 @@ namespace DotNetToJScript
             VBScript,
         }
 
+        private const string VERSION = "v1.0.3";
+
         static object BuildLoaderDelegate(byte[] assembly)
         {
             // Create a bound delegate which will load our assembly from a byte array.
@@ -169,7 +171,7 @@ namespace DotNetToJScript
                         { "d", "Enable debug output from script", v => enable_debug = v != null },
                         { "l|lang=", String.Format("Specify script language to use ({0})",
                                         GetEnumString(typeof(ScriptLanguage))), v => ParseEnum(v, out language) },
-                        { "v", "Build a VBA file (use -lang switch).", v => language = ScriptLanguage.VBA },
+                        { "v", "Build a VBA file (deprecated, use -lang switch).", v => language = ScriptLanguage.VBA },
                         { "ver=", String.Format("Specify .NET version to use ({0})", 
                                         GetEnumString(typeof(RuntimeVersion))), v => ParseEnum(v, out version) },
                         { "o=", "Specify output file (default is stdout).", v => output_file = v },
@@ -181,8 +183,9 @@ namespace DotNetToJScript
                 string assembly_path = opts.Parse(args).FirstOrDefault();
                 if (!File.Exists(assembly_path) || show_help)
                 {
-                    Console.Error.WriteLine(@"Usage: DotNetToJScript [options] path\to\asm");
+                    Console.Error.WriteLine(@"Usage: DotNetToJScript {0} [options] path\to\asm", VERSION);
                     Console.Error.WriteLine("Copyright (C) James Forshaw 2017. Licensed under GPLv3.");
+                    Console.Error.WriteLine("Source code at https://github.com/tyranid/DotNetToJScript");
                     Console.Error.WriteLine("Options");
                     opts.WriteOptionDescriptions(Console.Error);
                     Environment.Exit(1);
