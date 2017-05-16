@@ -27,78 +27,10 @@ using System.Text;
 using System.Xml;
 using System.Xml.Schema;
 
-namespace Serialize
+namespace DotNetToJScript
 {
     class Program
     {
-        static string jscript_template =
-            @"
-var serialized_obj = [
-%SERIALIZED%
-];
-var entry_class = '%CLASS%';
-
-try {
-    var stm = new ActiveXObject('System.IO.MemoryStream');
-    var fmt = new ActiveXObject('System.Runtime.Serialization.Formatters.Binary.BinaryFormatter');
-    var al = new ActiveXObject('System.Collections.ArrayList')
-
-    for (i in serialized_obj) {
-        stm.WriteByte(serialized_obj[i]);
-    }
-
-    stm.Position = 0;
-    var n = fmt.SurrogateSelector;
-    var d = fmt.Deserialize_2(stm);
-    al.Add(n);
-    var o = d.DynamicInvoke(al.ToArray()).CreateInstance(entry_class);
-    %ADDEDSCRIPT%
-} catch (e) {
-    WScript.Echo(e.message);
-}";
-
-        static string vba_template =
-            @"
-Private Function decodeHex(hex)
-    On Error Resume Next
-    Dim DM, EL
-    Set DM = CreateObject(""Microsoft.XMLDOM"")
-    Set EL = DM.createElement(""tmp"")
-    EL.DataType = ""bin.hex""
-    EL.Text = hex
-    decodeHex = EL.NodeTypedValue
-End Function
-
-Function Run()
-    Dim serialized_obj
-    %SERIALIZED%
-
-    entry_class = ""%CLASS%""
-
-    Dim stm As Object, fmt As Object, al As Object
-    Set stm = CreateObject(""System.IO.MemoryStream"")
-    Set fmt = CreateObject(""System.Runtime.Serialization.Formatters.Binary.BinaryFormatter"")
-    Set al = CreateObject(""System.Collections.ArrayList"")
-
-    Dim dec
-    dec = decodeHex(serialized_obj)
-
-    For Each i In dec
-        stm.WriteByte i
-    Next i
-
-    stm.Position = 0
-
-    Dim n As Object, d As Object, o As Object
-    Set n = fmt.SurrogateSelector
-    Set d = fmt.Deserialize_2(stm)
-    al.Add n
-
-    Set o = d.DynamicInvoke(al.ToArray()).CreateInstance(entry_class)
-    %ADDEDSCRIPT%
-End Function
-";
-
         static string scriptlet_template =
             @"<?xml version='1.0'?>
 <package>
@@ -112,6 +44,11 @@ End Function
 </component>
 </package>
 ";
+        enum ScriptLanguage
+        {
+            JScript,
+            VBA,
+        }
 
         static object BuildLoaderDelegate(byte[] assembly)
         {
@@ -151,7 +88,7 @@ End Function
 
         const string DEFAULT_ENTRY_CLASS_NAME = "TestClass";
 
-        static string CreateScriptlet(string script, bool register_script)
+        static string CreateScriptlet(string script, string script_name, bool register_script)
         {
             XmlDocument doc = new XmlDocument();
             doc.LoadXml(scriptlet_template);
@@ -162,7 +99,7 @@ End Function
 
             XmlNode root_node = doc.SelectSingleNode(register_script ? "/package/component/registration" : "/package/component");
             XmlNode script_node = root_node.AppendChild(doc.CreateElement("script"));
-            script_node.Attributes.Append(doc.CreateAttribute("language")).Value = "JScript";
+            script_node.Attributes.Append(doc.CreateAttribute("language")).Value = script_name;
             script_node.AppendChild(doc.CreateCDataSection(script));
             
             using (MemoryStream stm = new MemoryStream())
@@ -204,6 +141,16 @@ End Function
         {
             WriteError(String.Format(format, args));
         }
+
+        static string GetEnumString(Type enum_type)
+        {
+            return String.Join(", ", Enum.GetNames(enum_type));
+        }
+
+        static void ParseEnum<T>(string name, out T value) where T : struct
+        {
+            value = (T)Enum.Parse(typeof(T), name, true);
+        }
         
         static void Main(string[] args)
         {
@@ -211,17 +158,19 @@ End Function
             {
                 if (Environment.Version.Major != 2)
                 {
-                    WriteError("This tool only works on v2 of the CLR");
+                    WriteError("This tool should only be run on v2 of the CLR");
                     Environment.Exit(1);
                 }
 
                 string output_file = null;
                 string entry_class_name = DEFAULT_ENTRY_CLASS_NAME;
-                string script_file = null;
+                string additional_script = String.Empty;
                 bool mscorlib_only = false;
                 bool scriptlet_moniker = false;
                 bool scriptlet_uninstall = false;
-                bool vba_code = false;
+                bool enable_debug = false;
+                RuntimeVersion version = RuntimeVersion.None;
+                ScriptLanguage language = ScriptLanguage.JScript;
 
                 bool show_help = false;
 
@@ -229,10 +178,15 @@ End Function
                         { "n", "Build a script which only uses mscorlib.", v => mscorlib_only = v != null },
                         { "m", "Build a scriptlet file in moniker format.", v => scriptlet_moniker = v != null },
                         { "u", "Build a scriptlet file in uninstall format.", v => scriptlet_uninstall = v != null },
-                        { "v", "Build a VBA file.", v => vba_code = v != null },
+                        { "d", "Enable debug output from script", v => enable_debug = v != null },
+                        { "l|lang=", String.Format("Specify script language to use ({0})",
+                                        GetEnumString(typeof(ScriptLanguage))), v => ParseEnum(v, out language) },
+                        { "v", "Build a VBA file (use -lang switch).", v => language = ScriptLanguage.VBA },
+                        { "ver=", String.Format("Specify .NET version to use ({0})", 
+                                        GetEnumString(typeof(RuntimeVersion))), v => ParseEnum(v, out version) },
                         { "o=", "Specify output file (default is stdout).", v => output_file = v },
                         { "c=", String.Format("Specify entry class name (default {0})", entry_class_name), v => entry_class_name = v },
-                        { "s=", "Specify file with additional script. 'o' is created instance.", v => script_file = v },
+                        { "s=", "Specify file with additional script. 'o' is created instance.", v => additional_script = File.ReadAllText(v) },
                         { "h|help",  "Show this message and exit", v => show_help = v != null },
                 };
 
@@ -246,10 +200,17 @@ End Function
                     Environment.Exit(1);
                 }
 
-                if (vba_code && (scriptlet_moniker || scriptlet_uninstall))
+                IScriptGenerator generator;
+                switch (language)
                 {
-                    WriteError("Cannot use '-v' in combination with scriptlet options.");
-                    Environment.Exit(1);
+                    case ScriptLanguage.JScript:
+                        generator = new JScriptGenerator();
+                        break;
+                    case ScriptLanguage.VBA:
+                        generator = new VBAGenerator();
+                        break;
+                    default:
+                        throw new ArgumentException("Invalid script language option");
                 }
 
                 byte[] assembly = File.ReadAllBytes(assembly_path);
@@ -284,54 +245,14 @@ End Function
                 MemoryStream stm = new MemoryStream();
                 fmt.Serialize(stm, mscorlib_only ? BuildLoaderDelegateMscorlib(assembly) : BuildLoaderDelegate(assembly));
 
-                byte[] ba = stm.ToArray();
-                string template;
-                StringBuilder builder = new StringBuilder();
-
-                if (vba_code)
-                {
-                    template = vba_template;
-
-                    string hex_encoded = BitConverter.ToString(ba).Replace("-", "");
-
-                    for (int i = 0; i < hex_encoded.Length; i++)
-                    {
-                        if (i == 0)
-                        {
-                            builder.Append("    serialized_obj = \"");
-                        }
-                        else if (i % 100 == 0)
-                        {
-                            builder.Append("\"");
-                            builder.AppendLine();
-                            builder.Append("    serialized_obj = serialized_obj & \"");
-                        }
-                        builder.Append(hex_encoded[i]);
-                    }
-                    builder.Append("\"");
-
-                } else {
-                    template = jscript_template;
-
-                    for (int i = 0; i < ba.Length; ++i)
-                    {
-                        builder.Append(ba[i]);
-                        if (i < ba.Length - 1)
-                        {
-                            builder.Append(",");
-                        }
-                        if (i > 0 && (i % 32) == 0)
-                        {
-                            builder.AppendLine();
-                        }
-                    }
-                }
-
-                string script = template.Replace("%SERIALIZED%", builder.ToString()).Replace("%CLASS%", entry_class_name).Replace("%ADDEDSCRIPT%", File.Exists(script_file) ? File.ReadAllText(script_file) : "");
-
+                string script = generator.GenerateScript(stm.ToArray(), entry_class_name, additional_script, version, enable_debug);
                 if (scriptlet_moniker || scriptlet_uninstall)
                 {
-                    script = CreateScriptlet(script, scriptlet_uninstall);
+                    if (generator.SupportsScriptlet)
+                    {
+                        throw new ArgumentException(String.Format("{0} generator does not support Scriptlet output", generator.ScriptName));
+                    }
+                    script = CreateScriptlet(script, generator.ScriptName, scriptlet_uninstall);
                 }
 
                 if (!String.IsNullOrEmpty(output_file))

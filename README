@@ -1,5 +1,5 @@
 ﻿This file is part of DotNetToJScript - A tool to generate a 
-JScript which bootstraps an arbitrary v2.NET Assembly and class.
+JScript which bootstraps an arbitrary .NET Assembly and class.
 Copyright (C) James Forshaw 2017
 
 DotNetToJScript is free software: you can redistribute it and/or modify
@@ -18,11 +18,10 @@ along with DotNetToJScript.  If not, see <http://www.gnu.org/licenses/>.
 Usage Notes:
 
 This only works from full trust JScript(obviously), so should work in
-scriptlets etc. It also only works if v2/v3/v3.5 is installed. If
-only v4+ is installed then the system will prompt for installation of
-.NET v2. Don't think there's any way around this, seems that while the
-COM objects are registered it doesn't fall-forward to using .NET 4 even
-though it should work in theory.
+scriptlets etc. By default it will only works if v2/v3/v3.5 is installed.
+However if you specify the '-ver auto' switch when building the output it
+will also work on v4+ only, however that will introduce a dependency on
+WScript.Shell which you might not want.
 
 To use this you'll need to create an assembly which targets .NET 2 (though
 in most cases you can also use 3.5 as you don't tend to see .NET 2 installed
@@ -59,7 +58,8 @@ o.DoSomething("SomeArg");
 The default mode is to output a JScript file which can be executed in Windows
 Scripting Host. However if you want a scriptlet pass either -m (for a scriptlet
 which can be used from a scriptlet moniker) or -u (for a scriptlet which can be
-used from regsvr32).
+used from regsvr32). You can also specify the -v switch to output a VBA file which
+should work in Office Macros.
 
 Finally by default the tool will output to stdout, you can output direct to a file
 using the -o switch.
