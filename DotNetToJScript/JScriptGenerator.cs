@@ -65,16 +65,22 @@ namespace DotNetToJScript
             }
         }
 
-        public string GenerateScript(byte[] serialized_object, string entry_class_name, string additional_script, RuntimeVersion version, bool enable_debug)
+        public static string[] BinToBase64Lines(byte[] serialized_object)
         {
-            if ((serialized_object.Length % 3) != 0)
+            int ofs = serialized_object.Length % 3;
+            if (ofs != 0)
             {
-                int length = serialized_object.Length + (3 - serialized_object.Length % 3);
+                int length = serialized_object.Length + (3 - ofs);
                 Array.Resize(ref serialized_object, length);
             }
 
             string base64 = Convert.ToBase64String(serialized_object, Base64FormattingOptions.InsertLineBreaks);
-            string[] lines = base64.Split(new string[] { Environment.NewLine }, StringSplitOptions.None).Select(s => String.Format("\"{0}\"", s)).ToArray();
+            return base64.Split(new string[] { Environment.NewLine }, StringSplitOptions.None).Select(s => String.Format("\"{0}\"", s)).ToArray();
+        }
+
+        public string GenerateScript(byte[] serialized_object, string entry_class_name, string additional_script, RuntimeVersion version, bool enable_debug)
+        {
+            string[] lines = BinToBase64Lines(serialized_object);
 
             return GetScriptHeader(version, enable_debug) 
                 + Properties.Resources.jscript_template.Replace("%SERIALIZED%", String.Join("+"+Environment.NewLine, lines)).Replace("%CLASS%", entry_class_name).Replace("%ADDEDSCRIPT%", additional_script);

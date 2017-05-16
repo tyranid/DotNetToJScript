@@ -35,6 +35,7 @@ namespace DotNetToJScript
         {
             JScript,
             VBA,
+            VBScript,
         }
 
         static object BuildLoaderDelegate(byte[] assembly)
@@ -195,6 +196,9 @@ namespace DotNetToJScript
                         break;
                     case ScriptLanguage.VBA:
                         generator = new VBAGenerator();
+                        break;
+                    case ScriptLanguage.VBScript:
+                        generator = new VBScriptGenerator();
                         break;
                     default:
                         throw new ArgumentException("Invalid script language option");

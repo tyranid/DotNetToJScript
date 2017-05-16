@@ -54,6 +54,7 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="VBAGenerator.cs" />
+    <Compile Include="VBScriptGenerator.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -75,6 +76,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\jscript_auto_version_script.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\vbs_template.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\vbs_auto_version_script.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

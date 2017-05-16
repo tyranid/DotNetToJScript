@@ -61,16 +61,14 @@ namespace DotNetToJScript.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to function setversion() {
-        ///  var shell = new ActiveXObject(&apos;WScript.Shell&apos;);
-        ///  ver = &apos;v4.0.30319&apos;;
-        ///  try {
-        ///    shell.RegRead(&apos;HKLM\\SOFTWARE\\Microsoft\\.NETFramework\\v4.0.30319\\&apos;);
-        ///  } catch(e) { 
-        ///    ver = &apos;v2.0.50727&apos;;
-        ///  }
-        ///  shell.Environment(&apos;Process&apos;)(&apos;COMPLUS_Version&apos;) = ver;
+        ///   Looks up a localized string similar to var shell = new ActiveXObject(&apos;WScript.Shell&apos;);
+        ///ver = &apos;v4.0.30319&apos;;
+        ///try {
+        ///shell.RegRead(&apos;HKLM\\SOFTWARE\\Microsoft\\.NETFramework\\v4.0.30319\\&apos;);
+        ///} catch(e) { 
+        ///ver = &apos;v2.0.50727&apos;;
         ///}
+        ///shell.Environment(&apos;Process&apos;)(&apos;COMPLUS_Version&apos;) = ver;
         ///.
         /// </summary>
         internal static string jscript_auto_version_script {
@@ -80,25 +78,23 @@ namespace DotNetToJScript.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to var serialized_obj = [
-        ///%SERIALIZED%
-        ///];
+        ///   Looks up a localized string similar to function base64ToStream(b) {
+        ///	var enc = new ActiveXObject(&quot;System.Text.ASCIIEncoding&quot;);
+        ///	var length = enc.GetByteCount_2(b);
+        ///	var ba = enc.GetBytes_4(b);
+        ///	var transform = new ActiveXObject(&quot;System.Security.Cryptography.FromBase64Transform&quot;);
+        ///	ba = transform.TransformFinalBlock(ba, 0, length);
+        ///	var ms = new ActiveXObject(&quot;System.IO.MemoryStream&quot;);
+        ///	ms.Write(ba, 0, (length / 4) * 3);
+        ///	ms.Position = 0;
+        ///	return ms;
+        ///}
+        ///
+        ///var serialized_obj = %SERIALIZED%;
         ///var entry_class = &apos;%CLASS%&apos;;
         ///
         ///try {
-        ///    setversion();
-        ///    var stm = new ActiveXObject(&apos;System.IO.MemoryStream&apos;);
-        ///    var fmt = new ActiveXObject(&apos;System.Runtime.Serialization.Formatters.Binary.BinaryFormatter&apos;);
-        ///    var al = new ActiveXObject(&apos;System.Collections.ArrayList&apos;)
-        ///
-        ///    for (i in serialized_obj) {
-        ///        stm.WriteByte(serialized_obj[i]);
-        ///    }
-        ///
-        ///    stm.Position = 0;
-        ///    var n = fmt.SurrogateSelector;
-        ///    var d = fmt.Deserialize_2(stm);
-        ///    a [rest of string was truncated]&quot;;.
+        ///	setver [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string jscript_template {
             get {
@@ -149,6 +145,50 @@ namespace DotNetToJScript.Properties {
         internal static string vba_template {
             get {
                 return ResourceManager.GetString("vba_template", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dim shell
+        ///Set shell = CreateObject(&apos;WScript.Shell&apos;)
+        ///
+        ///Dim ver
+        ///ver = &quot;v4.0.30319&quot;;
+        ///
+        ///On Error Resume Next
+        ///shell.RegRead &quot;HKLM\\SOFTWARE\\Microsoft\\.NETFramework\\v4.0.30319\\&quot;
+        ///
+        ///ver = &apos;v2.0.50727&apos;;
+        ///}
+        ///shell.Environment(&apos;Process&apos;)(&apos;COMPLUS_Version&apos;) = ver;
+        ///.
+        /// </summary>
+        internal static string vbs_auto_version_script {
+            get {
+                return ResourceManager.GetString("vbs_auto_version_script", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Function Base64ToStream(b)
+        ///  Dim enc, length, ba, transform, ms
+        ///  Set enc = CreateObject(&quot;System.Text.ASCIIEncoding&quot;)
+        ///  length = enc.GetByteCount_2(b)
+        ///  Set transform = CreateObject(&quot;System.Security.Cryptography.FromBase64Transform&quot;)
+        ///  Set ms = CreateObject(&quot;System.IO.MemoryStream&quot;)
+        ///  ms.Write transform.TransformFinalBlock(enc.GetBytes_4(b), 0, length), 0, ((length / 4) * 3)
+        ///  ms.Position = 0
+        ///  Set Base64ToStream = ms
+        ///End Function
+        ///
+        ///Sub Run
+        ///Dim s, entry_class
+        ///s = %SERIALIZED%
+        ///entry_class = &quot;%CL [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string vbs_template {
+            get {
+                return ResourceManager.GetString("vbs_template", resourceCulture);
             }
         }
     }
