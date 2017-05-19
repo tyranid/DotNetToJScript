@@ -122,6 +122,24 @@ namespace DotNetToJScript.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Dim ver
+        ///ver = &quot;v4.0.30319&quot;
+        ///On Error Resume Next
+        ///shell.RegRead &quot;HKLM\SOFTWARE\\Microsoft\.NETFramework\v4.0.30319\&quot;
+        ///If Err.Number &lt;&gt; 0 Then
+        ///  ver = &quot;v2.0.50727&quot;
+        ///  Err.Clear
+        ///End If
+        ///shell.Environment(&quot;Process&quot;).Item(&quot;COMPLUS_Version&quot;) = ver
+        ///.
+        /// </summary>
+        internal static string vb_multi_auto_version_script {
+            get {
+                return ResourceManager.GetString("vb_multi_auto_version_script", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Private Function decodeHex(hex)
         ///    On Error Resume Next
         ///    Dim DM, EL
@@ -145,27 +163,6 @@ namespace DotNetToJScript.Properties {
         internal static string vba_template {
             get {
                 return ResourceManager.GetString("vba_template", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Dim shell
-        ///Set shell = CreateObject(&apos;WScript.Shell&apos;)
-        ///
-        ///Dim ver
-        ///ver = &quot;v4.0.30319&quot;;
-        ///
-        ///On Error Resume Next
-        ///shell.RegRead &quot;HKLM\\SOFTWARE\\Microsoft\\.NETFramework\\v4.0.30319\\&quot;
-        ///
-        ///ver = &apos;v2.0.50727&apos;;
-        ///}
-        ///shell.Environment(&apos;Process&apos;)(&apos;COMPLUS_Version&apos;) = ver;
-        ///.
-        /// </summary>
-        internal static string vbs_auto_version_script {
-            get {
-                return ResourceManager.GetString("vbs_auto_version_script", resourceCulture);
             }
         }
         

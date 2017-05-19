@@ -40,16 +40,6 @@ namespace DotNetToJScript
 
         public string GenerateScript(byte[] serialized_object, string entry_class_name, string additional_script, RuntimeVersion version, bool enable_debug)
         {
-            if (version != RuntimeVersion.None)
-            {
-                throw new ArgumentException("VBA generator does not support version detection");
-            }
-
-            if (enable_debug)
-            {
-                throw new ArgumentException("VBA generator does not support debug output");
-            }
-
             string hex_encoded = BitConverter.ToString(serialized_object).Replace("-", "");
             StringBuilder builder = new StringBuilder();
 
@@ -69,7 +59,7 @@ namespace DotNetToJScript
             }
             builder.Append("\"");
 
-            return Properties.Resources.vba_template.Replace("%SERIALIZED%", builder.ToString()).Replace("%CLASS%", entry_class_name).Replace("%ADDEDSCRIPT%", additional_script);
+            return VBShared.GetScriptHeader(version, enable_debug, ScriptName) + Properties.Resources.vba_template.Replace("%SERIALIZED%", builder.ToString()).Replace("%CLASS%", entry_class_name).Replace("%ADDEDSCRIPT%", additional_script);
         }
     }
 }

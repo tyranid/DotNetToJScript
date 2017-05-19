@@ -20,17 +20,20 @@ using System.Text;
 
 namespace DotNetToJScript
 {
-    class VBScriptGenerator : IScriptGenerator
+    static class VBShared
     {
-        static string GetScriptHeader(RuntimeVersion version, bool enable_debug)
+        public static string GetScriptHeader(RuntimeVersion version, bool enable_debug, string script_name)
         {
             StringBuilder builder = new StringBuilder();
-            builder.AppendLine("Sub Debug(s)");
+            builder.AppendLine("Sub DebugPrint(s)");
             if (enable_debug)
             {
-                builder.AppendLine("Wscript.Echo s");
+                if (script_name == "VBScript") builder.AppendLine("Wscript.Echo s");
+                else if (script_name == "VBA") builder.AppendLine("Debug.Print s");
             }
             builder.AppendLine("End Sub");
+            builder.AppendLine();
+
             builder.AppendLine("Sub SetVersion");
             if (version != RuntimeVersion.None)
             {
@@ -45,14 +48,17 @@ namespace DotNetToJScript
                         builder.AppendLine("shell.Environment(\"Process\").Item(\"COMPLUS_Version\") = \"v4.0.30319\"");
                         break;
                     case RuntimeVersion.Auto:
-                        builder.AppendLine(Properties.Resources.vbs_auto_version_script);
+                        builder.AppendLine(Properties.Resources.vb_multi_auto_version_script);
                         break;
                 }
             }
             builder.AppendLine("End Sub");
+            builder.AppendLine();
             return builder.ToString();
         }
-
+    }
+    class VBScriptGenerator : IScriptGenerator
+    {
         public string ScriptName
         {
             get
@@ -73,7 +79,7 @@ namespace DotNetToJScript
         {
             string[] lines = JScriptGenerator.BinToBase64Lines(serialized_object);
 
-            return GetScriptHeader(version, enable_debug) + Properties.Resources.vbs_template.Replace("%SERIALIZED%", 
+            return VBShared.GetScriptHeader(version, enable_debug, ScriptName) + Properties.Resources.vbs_template.Replace("%SERIALIZED%", 
                 String.Join(Environment.NewLine + "s = s & ", lines)).Replace("%CLASS%", entry_class_name).Replace("%ADDEDSCRIPT%", additional_script);
         }
     }
