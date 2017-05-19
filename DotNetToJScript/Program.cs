@@ -171,7 +171,6 @@ namespace DotNetToJScript
                         { "d", "Enable debug output from script", v => enable_debug = v != null },
                         { "l|lang=", String.Format("Specify script language to use ({0})",
                                         GetEnumString(typeof(ScriptLanguage))), v => ParseEnum(v, out language) },
-                        //{ "v", "Build a VBA file (deprecated, use -lang switch).", v => language = ScriptLanguage.VBA },
                         { "v|ver=", String.Format("Specify .NET version to use ({0})", 
                                         GetEnumString(typeof(RuntimeVersion))), v => ParseEnum(v, out version) },
                         { "o=", "Specify output file (default is stdout).", v => output_file = v },
