@@ -28,6 +28,6 @@ SetVersion
 On Error Resume Next
 Run
 If Err.Number <> 0 Then
-  Debug Err.Description
+  DebugPrint Err.Description
   Err.Clear
 End If

@@ -20,17 +20,19 @@ using System.Text;
 
 namespace DotNetToJScript
 {
-    class VBScriptGenerator : IScriptGenerator
+    static class VBShared
     {
-        static string GetScriptHeader(RuntimeVersion version, bool enable_debug)
+        public static string GetScriptHeader(RuntimeVersion version, string debug_statement)
         {
             StringBuilder builder = new StringBuilder();
-            builder.AppendLine("Sub Debug(s)");
-            if (enable_debug)
+            builder.AppendLine("Sub DebugPrint(s)");
+            if (!String.IsNullOrEmpty(debug_statement))
             {
-                builder.AppendLine("Wscript.Echo s");
+                builder.AppendLine("{0} s");
             }
             builder.AppendLine("End Sub");
+            builder.AppendLine();
+
             builder.AppendLine("Sub SetVersion");
             if (version != RuntimeVersion.None)
             {
@@ -45,14 +47,18 @@ namespace DotNetToJScript
                         builder.AppendLine("shell.Environment(\"Process\").Item(\"COMPLUS_Version\") = \"v4.0.30319\"");
                         break;
                     case RuntimeVersion.Auto:
-                        builder.AppendLine(Properties.Resources.vbs_auto_version_script);
+                        builder.AppendLine(Properties.Resources.vb_multi_auto_version_script);
                         break;
                 }
             }
             builder.AppendLine("End Sub");
+            builder.AppendLine();
             return builder.ToString();
         }
+    }
 
+    class VBScriptGenerator : IScriptGenerator
+    {
         public string ScriptName
         {
             get
@@ -73,7 +79,7 @@ namespace DotNetToJScript
         {
             string[] lines = JScriptGenerator.BinToBase64Lines(serialized_object);
 
-            return GetScriptHeader(version, enable_debug) + Properties.Resources.vbs_template.Replace("%SERIALIZED%", 
+            return VBShared.GetScriptHeader(version, enable_debug ? "WScript.Echo" : String.Empty) + Properties.Resources.vbs_template.Replace("%SERIALIZED%", 
                 String.Join(Environment.NewLine + "s = s & ", lines)).Replace("%CLASS%", entry_class_name).Replace("%ADDEDSCRIPT%", additional_script);
         }
     }

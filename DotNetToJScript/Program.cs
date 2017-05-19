@@ -38,7 +38,7 @@ namespace DotNetToJScript
             VBScript,
         }
 
-        private const string VERSION = "v1.0.3";
+        private const string VERSION = "v1.0.4";
 
         static object BuildLoaderDelegate(byte[] assembly)
         {
@@ -171,8 +171,7 @@ namespace DotNetToJScript
                         { "d", "Enable debug output from script", v => enable_debug = v != null },
                         { "l|lang=", String.Format("Specify script language to use ({0})",
                                         GetEnumString(typeof(ScriptLanguage))), v => ParseEnum(v, out language) },
-                        { "v", "Build a VBA file (deprecated, use -lang switch).", v => language = ScriptLanguage.VBA },
-                        { "ver=", String.Format("Specify .NET version to use ({0})", 
+                        { "v|ver=", String.Format("Specify .NET version to use ({0})", 
                                         GetEnumString(typeof(RuntimeVersion))), v => ParseEnum(v, out version) },
                         { "o=", "Specify output file (default is stdout).", v => output_file = v },
                         { "c=", String.Format("Specify entry class name (default {0})", entry_class_name), v => entry_class_name = v },

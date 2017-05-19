@@ -9,6 +9,10 @@ Private Function decodeHex(hex)
 End Function
 
 Function Run()
+    On Error Resume Next
+
+    SetVersion
+
     Dim serialized_obj
     %SERIALIZED%
 
@@ -35,4 +39,8 @@ Function Run()
 
     Set o = d.DynamicInvoke(al.ToArray()).CreateInstance(entry_class)
     %ADDEDSCRIPT%
+    If Err.Number <> 0 Then
+      DebugPrint Err.Description
+      Err.Clear
+    End If
 End Function
