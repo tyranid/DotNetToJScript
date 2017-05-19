@@ -22,14 +22,13 @@ namespace DotNetToJScript
 {
     static class VBShared
     {
-        public static string GetScriptHeader(RuntimeVersion version, bool enable_debug, string script_name)
+        public static string GetScriptHeader(RuntimeVersion version, string debug_statement)
         {
             StringBuilder builder = new StringBuilder();
             builder.AppendLine("Sub DebugPrint(s)");
-            if (enable_debug)
+            if (!String.IsNullOrEmpty(debug_statement))
             {
-                if (script_name == "VBScript") builder.AppendLine("Wscript.Echo s");
-                else if (script_name == "VBA") builder.AppendLine("Debug.Print s");
+                builder.AppendLine("{0} s");
             }
             builder.AppendLine("End Sub");
             builder.AppendLine();
@@ -57,6 +56,7 @@ namespace DotNetToJScript
             return builder.ToString();
         }
     }
+
     class VBScriptGenerator : IScriptGenerator
     {
         public string ScriptName
@@ -79,7 +79,7 @@ namespace DotNetToJScript
         {
             string[] lines = JScriptGenerator.BinToBase64Lines(serialized_object);
 
-            return VBShared.GetScriptHeader(version, enable_debug, ScriptName) + Properties.Resources.vbs_template.Replace("%SERIALIZED%", 
+            return VBShared.GetScriptHeader(version, enable_debug ? "WScript.Echo" : String.Empty) + Properties.Resources.vbs_template.Replace("%SERIALIZED%", 
                 String.Join(Environment.NewLine + "s = s & ", lines)).Replace("%CLASS%", entry_class_name).Replace("%ADDEDSCRIPT%", additional_script);
         }
     }

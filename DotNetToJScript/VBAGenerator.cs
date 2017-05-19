@@ -59,7 +59,8 @@ namespace DotNetToJScript
             }
             builder.Append("\"");
 
-            return VBShared.GetScriptHeader(version, enable_debug, ScriptName) + Properties.Resources.vba_template.Replace("%SERIALIZED%", builder.ToString()).Replace("%CLASS%", entry_class_name).Replace("%ADDEDSCRIPT%", additional_script);
+            return VBShared.GetScriptHeader(version, enable_debug ? "Debug.Print" : String.Empty) 
+                + Properties.Resources.vba_template.Replace("%SERIALIZED%", builder.ToString()).Replace("%CLASS%", entry_class_name).Replace("%ADDEDSCRIPT%", additional_script);
         }
     }
 }
