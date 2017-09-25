@@ -78,7 +78,7 @@ namespace DotNetToJScript
 
         const string DEFAULT_ENTRY_CLASS_NAME = "TestClass";
 
-        static string CreateScriptlet(string script, string script_name, bool register_script)
+        static string CreateScriptlet(string script, string script_name, bool register_script, Guid clsid)
         {
             XmlDocument doc = new XmlDocument();
             doc.LoadXml(Properties.Resources.scriptlet_template);
@@ -87,10 +87,15 @@ namespace DotNetToJScript
             settings.NewLineOnAttributes = true;
             settings.Encoding = new UTF8Encoding(false);
 
-            XmlNode root_node = doc.SelectSingleNode(register_script ? "/package/component/registration" : "/package/component");
+            XmlElement reg_node = (XmlElement)doc.SelectSingleNode("/package/component/registration");
+            XmlNode root_node = register_script ? reg_node : doc.SelectSingleNode("/package/component");
             XmlNode script_node = root_node.AppendChild(doc.CreateElement("script"));
             script_node.Attributes.Append(doc.CreateAttribute("language")).Value = script_name;
             script_node.AppendChild(doc.CreateCDataSection(script));
+            if (clsid != Guid.Empty)
+            {
+                reg_node.SetAttribute("classid", clsid.ToString("B"));
+            }
             
             using (MemoryStream stm = new MemoryStream())
             {
@@ -161,6 +166,7 @@ namespace DotNetToJScript
                 bool enable_debug = false;
                 RuntimeVersion version = RuntimeVersion.None;
                 ScriptLanguage language = ScriptLanguage.JScript;
+                Guid clsid = Guid.Empty;
 
                 bool show_help = false;
 
@@ -176,6 +182,7 @@ namespace DotNetToJScript
                         { "o=", "Specify output file (default is stdout).", v => output_file = v },
                         { "c=", String.Format("Specify entry class name (default {0})", entry_class_name), v => entry_class_name = v },
                         { "s=", "Specify file with additional script. 'o' is created instance.", v => additional_script = File.ReadAllText(v) },
+                        { "clsid=", "Specify a CLSID for the scriptlet", v => clsid = new Guid(v) },
                         { "h|help",  "Show this message and exit", v => show_help = v != null },
                 };
 
@@ -245,7 +252,7 @@ namespace DotNetToJScript
                     {
                         throw new ArgumentException(String.Format("{0} generator does not support Scriptlet output", generator.ScriptName));
                     }
-                    script = CreateScriptlet(script, generator.ScriptName, scriptlet_uninstall);
+                    script = CreateScriptlet(script, generator.ScriptName, scriptlet_uninstall, clsid);
                 }
 
                 if (!String.IsNullOrEmpty(output_file))
