@@ -28,7 +28,7 @@ namespace DotNetToJScript
             builder.AppendLine("Sub DebugPrint(s)");
             if (!String.IsNullOrEmpty(debug_statement))
             {
-                builder.AppendLine("{0} s");
+                builder.AppendFormat("{0} s", debug_statement).AppendLine();
             }
             builder.AppendLine("End Sub");
             builder.AppendLine();
