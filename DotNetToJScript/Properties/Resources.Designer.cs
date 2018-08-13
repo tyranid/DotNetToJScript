@@ -103,6 +103,15 @@ namespace DotNetToJScript.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to &lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-16&quot; standalone=&quot;yes&quot;?&gt;&lt;assembly xmlns=&quot;urn:schemas-microsoft-com:asm.v1&quot; manifestVersion=&quot;1.0&quot;&gt;&lt;assemblyIdentity name=&quot;mscorlib&quot; version=&quot;%MSCORLIBVERSION%&quot; publicKeyToken=&quot;B77A5C561934E089&quot; /&gt;&lt;clrClass clsid=&quot;{D0CBA7AF-93F5-378A-BB11-2A5D9AA9C4D7}&quot; progid=&quot;System.Runtime.Serialization.Formatters.Binary.BinaryFormatter&quot; threadingModel=&quot;Both&quot; name=&quot;System.Runtime.Serialization.Formatters.Binary.BinaryFormatter&quot; runtimeVersion=&quot;%RUNTIMEVERSION%&quot; /&gt;&lt;clrClass clsid=&quot;{8D907746-4 [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string manifest_template {
+            get {
+                return ResourceManager.GetString("manifest_template", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to &lt;?xml version=&apos;1.0&apos;?&gt;
         ///&lt;package&gt;
         ///&lt;component id=&apos;dummy&apos;&gt;
