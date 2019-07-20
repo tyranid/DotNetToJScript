@@ -19,7 +19,10 @@ Function Run()
     Dim stm As Object, fmt As Object, al As Object
     Set stm = CreateObject("System.IO.MemoryStream")
 
-    If stm Is Nothing Then
+    Dim dotnetversion As String
+    dotnetversion = "%DOTNETVERSION%"
+
+    If dotnetversion <> "v2" Then
         %MANIFEST%
 
         Set ax = CreateObject("Microsoft.Windows.ActCtx")
