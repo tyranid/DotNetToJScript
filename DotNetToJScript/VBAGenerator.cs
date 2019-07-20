@@ -89,6 +89,7 @@ namespace DotNetToJScript
         {
             string hex_encoded = BitConverter.ToString(serialized_object).Replace("-", "");
             StringBuilder builder = new StringBuilder();
+            string dotnetversion = (version != RuntimeVersion.v2) ? "v4" : "v2";
 
             for (int i = 0; i < hex_encoded.Length; i++)
             {
@@ -119,6 +120,9 @@ namespace DotNetToJScript
                                             ).Replace(
                                                 "%ADDEDSCRIPT%",
                                                 additional_script
+                                            ).Replace(
+                                                "%DOTNETVERSION%",
+                                                dotnetversion
                                             );
         }
     }
