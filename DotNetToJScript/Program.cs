@@ -161,6 +161,7 @@ namespace DotNetToJScript
                 string entry_class_name = DEFAULT_ENTRY_CLASS_NAME;
                 string additional_script = String.Empty;
                 bool mscorlib_only = false;
+                bool raw_serialized = false;
                 bool scriptlet_moniker = false;
                 bool scriptlet_uninstall = false;
                 bool enable_debug = false;
@@ -175,11 +176,13 @@ namespace DotNetToJScript
                         { "m", "Build a scriptlet file in moniker format.", v => scriptlet_moniker = v != null },
                         { "u", "Build a scriptlet file in uninstall format.", v => scriptlet_uninstall = v != null },
                         { "d", "Enable debug output from script", v => enable_debug = v != null },
+                        { "r", "Output a raw serialized loader delegate (encoded as Base64 stream) instead of a fully-fledged script", v => raw_serialized = v != null },
                         { "l|lang=", String.Format("Specify script language to use ({0})",
                                         GetEnumString(typeof(ScriptLanguage))), v => ParseEnum(v, out language) },
                         { "v|ver=", String.Format("Specify .NET version to use ({0})", 
                                         GetEnumString(typeof(RuntimeVersion))), v => ParseEnum(v, out version) },
                         { "o=", "Specify output file (default is stdout).", v => output_file = v },
+
                         { "c=", String.Format("Specify entry class name (default {0})", entry_class_name), v => entry_class_name = v },
                         { "s=", "Specify file with additional script. 'o' is created instance.", v => additional_script = File.ReadAllText(v) },
                         { "clsid=", "Specify a CLSID for the scriptlet", v => clsid = new Guid(v) },
@@ -210,7 +213,11 @@ namespace DotNetToJScript
                         generator = new VBScriptGenerator();
                         break;
                     default:
-                        throw new ArgumentException("Invalid script language option");
+                        {
+                            if (!raw_serialized) throw new ArgumentException("Invalid script language option");
+                            generator = new JScriptGenerator();
+                        }
+                        break;
                 }
 
                 byte[] assembly = File.ReadAllBytes(assembly_path);
@@ -245,8 +252,17 @@ namespace DotNetToJScript
                 MemoryStream stm = new MemoryStream();
                 fmt.Serialize(stm, mscorlib_only ? BuildLoaderDelegateMscorlib(assembly) : BuildLoaderDelegate(assembly));
 
-                string script = generator.GenerateScript(stm.ToArray(), entry_class_name, additional_script, version, enable_debug);
-                if (scriptlet_moniker || scriptlet_uninstall)
+                string script = "";
+                if(raw_serialized)
+                {
+                    script = System.Convert.ToBase64String(stm.ToArray());
+                }
+                else
+                {
+                    script = generator.GenerateScript(stm.ToArray(), entry_class_name, additional_script, version, enable_debug);
+                }
+
+                if (!raw_serialized && (scriptlet_moniker || scriptlet_uninstall))
                 {
                     if (!generator.SupportsScriptlet)
                     {
